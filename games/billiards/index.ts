@@ -31,6 +31,14 @@ export const billiards: GameModule = {
     if (!wins && !stars) return null;
     return [wins ? `${wins} win${wins === 1 ? "" : "s"}` : null, stars ? `${stars}★ tricks` : null].filter(Boolean).join(" · ");
   },
+  useTrophies: () => {
+    const wins = useBilliardsSave((s) => s.wins);
+    const trick = useBilliardsSave((s) => s.trick);
+    return [
+      { label: "Pool wins", value: wins, icon: "🏆", color: "var(--accent)" },
+      { label: "Trick stars", value: trickStarsTotal(trick), icon: "★", color: "var(--gold)" },
+    ];
+  },
   loadPlay: () => import("./play/BilliardsPlay"),
   loadSetup: () => import("./setup/BilliardsSetup"),
 };

@@ -18,6 +18,18 @@ export function ThemeController() {
   }, [theme]);
 
   useEffect(() => {
+    // Silence everything while the tab is hidden; resume on return.
+    const vis = () => {
+      const ctx = sfx.ctx;
+      if (!ctx) return;
+      if (document.hidden) void ctx.suspend();
+      else void ctx.resume();
+    };
+    document.addEventListener("visibilitychange", vis);
+    return () => document.removeEventListener("visibilitychange", vis);
+  }, []);
+
+  useEffect(() => {
     const unlock = () => sfx.unlock();
     window.addEventListener("pointerdown", unlock, { capture: true });
     window.addEventListener("keydown", unlock, { capture: true });

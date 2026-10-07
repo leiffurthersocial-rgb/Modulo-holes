@@ -1,7 +1,7 @@
 import { Flag, Shuffle, CalendarDays, Users } from "lucide-react";
 import type { GameModule } from "../types";
 import { GolfThumbnail } from "./Thumbnail";
-import { useGolfSave, totalStars } from "./save";
+import { useGolfSave, totalStars, totalCoins } from "./save";
 import { WORLDS } from "./courses";
 
 export const golf: GameModule = {
@@ -39,6 +39,15 @@ export const golf: GameModule = {
     const stars = totalStars(holes);
     const max = WORLDS.reduce((a, w) => a + w.holes.length * 3, 0);
     return stars > 0 ? `${stars}/${max} stars` : null;
+  },
+  useTrophies: () => {
+    const holes = useGolfSave((s) => s.holes);
+    const hio = useGolfSave((s) => s.holesInOne);
+    return [
+      { label: "Golf stars", value: totalStars(holes), icon: "★", color: "var(--gold)" },
+      { label: "Coins", value: totalCoins(holes), icon: "●", color: "#ffb300" },
+      { label: "Holes in one", value: hio, icon: "⛳", color: "var(--good)" },
+    ];
   },
   loadPlay: () => import("./play/GolfPlay"),
   loadSetup: () => import("./setup/GolfSetup"),

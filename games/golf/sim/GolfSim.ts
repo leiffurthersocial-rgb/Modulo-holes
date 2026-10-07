@@ -97,6 +97,9 @@ export class GolfSim {
   ground: GroundInfo | null = null;
   /** Seconds since the ball last touched anything. */
   airTime = 0;
+  /** Sim time of the last landing after a flight, and that flight's duration. */
+  private lastLanding = -10;
+  private lastFlight = 0;
   gateOpen: number[] = [];
   bumperPulse: number[] = [];
   padPulse: number[] = [];
@@ -511,6 +514,11 @@ export class GolfSim {
       this.emit({ type: "impact", surface: surf, speed: impact, pos: [this.ballPos.x, this.ballPos.y, this.ballPos.z] });
     }
 
+    if (touching && this.airTime > 0.2) {
+      // Just landed after a real flight: remember it for "bounce-in" detection.
+      this.lastLanding = this.t;
+      this.lastFlight = this.airTime;
+    }
     this.airTime = touching ? 0 : this.airTime + h;
     this.shot.maxAir = Math.max(this.shot.maxAir, this.airTime);
 
@@ -571,7 +579,7 @@ export class GolfSim {
     if (dcNow < G.cup.radius && bp.y < cy - R * 1.3) {
       this.phase = "holed";
       const speed = Math.hypot(before.x, before.z);
-      this.emit({ type: "holed", bounceIn: this.shot.maxAir > 0.25 && this.airTimeAtCup(), speed, strokes: this.strokes, pos: [cx, cy, cz] });
+      this.emit({ type: "holed", bounceIn: this.airTimeAtCup(), speed, strokes: this.strokes, pos: [cx, cy, cz] });
       return;
     }
 
@@ -608,9 +616,9 @@ export class GolfSim {
     this.world.step(this.queue, this.hooks);
   }
 
-  /** Recent airborne approach (for "bounce-in" detection). */
+  /** Did the ball drop in straight out of the air (landed inside the cup)? */
   private airTimeAtCup() {
-    return this.shot.maxAir > 0.25;
+    return this.airTime > 0.2 || (this.t - this.lastLanding < 0.35 && this.lastFlight > 0.2);
   }
 
   private comeToRest() {

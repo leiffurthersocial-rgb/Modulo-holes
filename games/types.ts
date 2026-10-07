@@ -32,6 +32,13 @@ export interface GameMenuEntry {
   locked?: () => string | null;
 }
 
+export interface Trophy {
+  label: string;
+  value: number;
+  icon: string;
+  color: string;
+}
+
 export interface QuickPlay {
   entryId: string;
   params: GameParams;
@@ -59,6 +66,8 @@ export interface GameModule {
   quickPlay: () => QuickPlay;
   /** Optional one-line progress summary for the hub card ("14★ · World 2"). */
   useProgressLabel?: () => string | null;
+  /** Optional trophy-cabinet stats shown on the hub (a React hook — client only). */
+  useTrophies?: () => Trophy[];
   loadPlay: () => Promise<{ default: ComponentType<PlayProps> }>;
   loadSetup?: () => Promise<{ default: ComponentType<SetupProps> }>;
 }

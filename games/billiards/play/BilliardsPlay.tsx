@@ -112,7 +112,8 @@ export default function BilliardsPlay({ entryId, params, onExit, onNavigate }: P
         if (s >= 2) popup({ text: `×${s}`, sub: s >= 4 ? "ON FIRE 🔥" : s >= 3 ? "HOT STREAK" : "COMBO", style: "big", color: s >= 3 ? "#ff8a3d" : "#7cf29b", y: 20 }, 1.2);
       }
       if (!v.continues && !v.foul && mode !== "practice") {
-        popup({ text: `${game.players[v.state.turn].name}'s turn`, style: "small", y: 70 }, 1.1);
+        const next = game.players[v.state.turn].name;
+        popup({ text: next === "You" ? "Your turn" : `${next}'s turn`, style: "small", y: 70 }, 1.1);
       }
     };
 

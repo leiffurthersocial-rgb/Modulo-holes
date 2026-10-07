@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
-import { GAMES, getGame } from "@/games/registry";
+import { gameRouteParams, isKnownRoute } from "@/games/manifest";
 import { GameMenu } from "@/components/hub/GameMenu";
 
 export function generateStaticParams() {
-  return GAMES.map((g) => ({ gameId: g.id }));
+  return gameRouteParams();
 }
 
 export default async function Page({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
-  if (!getGame(gameId)) notFound();
+  if (!isKnownRoute(gameId)) notFound();
   return <GameMenu gameId={gameId} />;
 }

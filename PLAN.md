@@ -28,7 +28,7 @@ games/
 scripts/verify-courses.ts  Headless Rapier check that every golf hole is solvable
 ```
 
-## Milestones (vertical slices)
+## Milestones (vertical slices) — all complete ✅
 
 1. **Setup + hub + engine** — Next/Tailwind/TS/ESLint, design tokens (dark/light), fonts, hub cards,
    GameModule registry, save system, settings, audio, juice bus, canvas wrapper. ✅ build + lint.

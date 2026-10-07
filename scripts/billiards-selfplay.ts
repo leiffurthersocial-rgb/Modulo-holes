@@ -1,3 +1,4 @@
+/** AI-vs-AI self-play smoke test for billiards rules + AI (prints winners, fouls and worst planning time). */
 import { simulateShot, respot } from "@/games/billiards/sim/physics";
 import { rack8, rack9 } from "@/games/billiards/sim/racks";
 import { initialState, judge } from "@/games/billiards/sim/rules";

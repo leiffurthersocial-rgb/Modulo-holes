@@ -292,7 +292,7 @@ export class BilliardsGame {
       return;
     }
     this.onShotResolved?.({ verdict: v, shooter, potted });
-    if (!v.continues) this.aimAtNearest();
+    this.aimAtNearest();
     this.beginTurn();
   }
 

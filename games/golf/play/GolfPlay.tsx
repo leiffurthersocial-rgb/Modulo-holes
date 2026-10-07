@@ -24,9 +24,10 @@ import { Hud } from "./Hud";
 import { DailySummary, IntroBanner, PassCard, PauseMenu, ResultsCard, Scorecard, type ResultsData } from "./Overlays";
 import { useGolfHud } from "./hudStore";
 import { makeRound, randomHole, type Round } from "./round";
-import { useGolfSave, totalStars } from "../save";
+import { useGolfSave, totalStars, totalCoins } from "../save";
 import { scoreName, starsFor } from "../scoring";
-import { getSkin } from "../skins";
+import { getSkin, SKINS, skinUnlocked } from "../skins";
+import { WORLDS } from "../courses";
 
 type Overlay = "none" | "results" | "pass" | "scorecard" | "daily" | "pause";
 
@@ -117,7 +118,10 @@ export default function GolfPlay({ entryId, params, onExit }: PlayProps) {
       }
 
       const save = useGolfSave.getState();
+      const starsBefore = totalStars(save.holes);
+      const coinsBefore = totalCoins(save.holes);
       const rec = save.recordHole(hole.id, strokes, stars, coins);
+      announceUnlocks(starsBefore, coinsBefore);
       if (strokes === 1) save.addHoleInOne();
       if (round.mode === "campaign") {
         const next = ref.index + 1 < world.holes.length ? ref.index + 1 : ref.index;
@@ -281,6 +285,22 @@ export default function GolfPlay({ entryId, params, onExit }: PlayProps) {
         onQuit={onExit}
       />
     </div>
+  );
+}
+
+/** Celebrate worlds / ball skins that just became available. */
+function announceUnlocks(starsBefore: number, coinsBefore: number) {
+  const holes = useGolfSave.getState().holes;
+  const stars = totalStars(holes);
+  const coins = totalCoins(holes);
+  const news: string[] = [];
+  for (const w of WORLDS) if (w.unlockStars > starsBefore && w.unlockStars <= stars) news.push(`${w.emoji} ${w.name} unlocked!`);
+  for (const sk of SKINS) if (!skinUnlocked(sk, starsBefore, coinsBefore) && skinUnlocked(sk, stars, coins)) news.push(`New ball: ${sk.name}`);
+  news.forEach((text, i) =>
+    window.setTimeout(() => {
+      sfx.play("unlock");
+      popup({ text, sub: "Unlocked", style: "big", color: "#ffd166", y: 14 }, 2.2);
+    }, 2600 + i * 1500),
   );
 }
 

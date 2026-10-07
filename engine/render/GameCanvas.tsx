@@ -1,9 +1,9 @@
 "use client";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { PerformanceMonitor } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette, ToneMapping, SMAA } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useEffect, type ReactNode } from "react";
 import * as THREE from "three";
 import { useEffectiveQuality, useSettings } from "@/engine/save/settings";
 import { ParticleSystem } from "@/engine/juice/ParticleSystem";
@@ -13,6 +13,15 @@ export const QUALITY_PRESETS = {
   medium: { dpr: [1, 1.5] as [number, number], shadows: true, post: true, shadowMapSize: 1024 },
   high: { dpr: [1, 2] as [number, number], shadows: true, post: true, shadowMapSize: 2048 },
 };
+
+/** Post-processing does its own tone mapping; without it the renderer must. Kept in sync live. */
+function ToneMappingSync({ post }: { post: boolean }) {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    gl.toneMapping = post ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+  }, [gl, post]);
+  return null;
+}
 
 interface Props {
   children: ReactNode;
@@ -38,12 +47,10 @@ export function GameCanvas({ children, bloom, vignette = 0.35, background }: Pro
       dpr={preset.dpr}
       gl={{ antialias: !preset.post, powerPreference: "high-performance", stencil: false }}
       camera={{ fov: 50, near: 0.05, far: 400, position: [0, 8, 10] }}
-      onCreated={({ gl }) => {
-        gl.toneMapping = preset.post ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
-      }}
       style={{ touchAction: "none" }}
     >
       {background && <color attach="background" args={[background]} />}
+      <ToneMappingSync post={preset.post} />
       {auto && (
         <PerformanceMonitor
           bounds={() => [44, 58]}
