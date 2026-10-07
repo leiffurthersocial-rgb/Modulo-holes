@@ -1,6 +1,7 @@
 import { Circle, Target, Users, Bot } from "lucide-react";
 import type { GameModule } from "../types";
 import { BilliardsThumbnail } from "./Thumbnail";
+import { useBilliardsSave, trickStarsTotal } from "./save";
 
 export const billiards: GameModule = {
   id: "billiards",
@@ -22,6 +23,14 @@ export const billiards: GameModule = {
     { id: "trick", title: "Trick Shots", subtitle: "Puzzle challenges", icon: Target, hasSetup: true },
     { id: "practice", title: "Practice", subtitle: "Free table, no rules", icon: Circle, hasSetup: false },
   ],
-  quickPlay: () => ({ entryId: "ai", params: { rules: "8ball", level: "medium" }, label: "Play" }),
+  quickPlay: () => ({ entryId: "ai", params: { rules: "8ball", level: "medium" }, label: "Quick 8-Ball" }),
+  useProgressLabel: () => {
+    const wins = useBilliardsSave((s) => s.wins);
+    const trick = useBilliardsSave((s) => s.trick);
+    const stars = trickStarsTotal(trick);
+    if (!wins && !stars) return null;
+    return [wins ? `${wins} win${wins === 1 ? "" : "s"}` : null, stars ? `${stars}★ tricks` : null].filter(Boolean).join(" · ");
+  },
   loadPlay: () => import("./play/BilliardsPlay"),
+  loadSetup: () => import("./setup/BilliardsSetup"),
 };

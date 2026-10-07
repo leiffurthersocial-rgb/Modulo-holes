@@ -102,7 +102,7 @@ export const TUNING = {
     physics: {
       dt: 1 / 960,
       /** Sliding friction coefficient (ball-cloth). */
-      muSlide: 0.2,
+      muSlide: 0.13,
       /** Rolling resistance coefficient. */
       muRoll: 0.011,
       /** Spin (z-axis) decay coefficient. */
@@ -121,7 +121,9 @@ export const TUNING = {
       minSpeed: 0.18,
       powerCurve: 1.6,
       /** Max tip offset as fraction of radius (beyond ~0.5 = miscue in real life). */
-      maxTipOffset: 0.5,
+      maxTipOffset: 0.55,
+      /** Break shots get extra pace (an amateur break is ~8–9 m/s). */
+      breakBoost: 1.3,
       pullBackPx: 220,
     },
     juice: {

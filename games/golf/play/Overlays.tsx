@@ -1,28 +1,16 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Home, Play, RotateCcw, Trophy, Volume2, VolumeX, Music, Smartphone } from "lucide-react";
+import { ArrowRight, Home, Play, RotateCcw, Trophy } from "lucide-react";
 import { useEffect } from "react";
-import { Button, Stars, AnimatedNumber, Toggle } from "@/components/ui";
-import { useSettings } from "@/engine/save/settings";
+import { Button, Stars, AnimatedNumber } from "@/components/ui";
 import { sfx } from "@/engine/audio/audio";
 import { formatToPar, scoreName } from "../scoring";
+import { GameCard } from "@/components/ui/GameCard";
 import type { Player } from "./round";
 
 const backdrop = "fixed inset-0 z-40 flex items-center justify-center p-4";
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.div
-      initial={{ scale: 0.7, y: 40, opacity: 0 }}
-      animate={{ scale: 1, y: 0, opacity: 1 }}
-      exit={{ scale: 0.9, y: 20, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 380, damping: 24 }}
-      className={`relative w-full max-w-sm overflow-hidden rounded-[30px] border border-white/10 bg-[#13151f]/92 p-6 text-white shadow-2xl backdrop-blur-xl ${className}`}
-    >
-      {children}
-    </motion.div>
-  );
-}
+const Card = GameCard;
 
 export function IntroBanner({ show, number, name, par, tip, worldName }: { show: boolean; number: number; name: string; par: number; tip?: string; worldName: string }) {
   return (
@@ -303,44 +291,4 @@ export function DailySummary({ open, toPar, best, isNewBest, stars, onMenu, onRe
   );
 }
 
-export function PauseMenu({ open, onResume, onRestart, onQuit }: { open: boolean; onResume: () => void; onRestart: () => void; onQuit: () => void }) {
-  const s = useSettings();
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div className={backdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <motion.div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={onResume} />
-          <Card className="text-center">
-            <div className="font-display text-4xl font-bold">Paused</div>
-            <div className="mt-5 flex flex-col gap-2.5">
-              <Button size="lg" block onClick={onResume}>
-                <Play size={20} fill="currentColor" /> Resume
-              </Button>
-              <Button variant="glass" size="lg" block onClick={onRestart}>
-                <RotateCcw size={20} /> Restart hole
-              </Button>
-              <Button variant="glass" size="lg" block onClick={onQuit} sound="back">
-                <Home size={20} /> Quit
-              </Button>
-            </div>
-            <div className="mt-5 space-y-3 rounded-2xl bg-white/[0.06] p-4 text-left">
-              <QuickToggle icon={s.sound ? <Volume2 size={18} /> : <VolumeX size={18} />} label="Sound" checked={s.sound} onChange={(v) => s.set({ sound: v })} />
-              <QuickToggle icon={<Music size={18} />} label="Music" checked={s.music} onChange={(v) => s.set({ music: v })} />
-              <QuickToggle icon={<Smartphone size={18} />} label="Haptics" checked={s.haptics} onChange={(v) => s.set({ haptics: v })} />
-            </div>
-          </Card>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function QuickToggle({ icon, label, checked, onChange }: { icon: React.ReactNode; label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-white/70">{icon}</span>
-      <span className="flex-1 font-semibold">{label}</span>
-      <Toggle label={label} checked={checked} onChange={onChange} />
-    </div>
-  );
-}
+export { PauseMenu } from "@/components/ui/PauseMenu";
