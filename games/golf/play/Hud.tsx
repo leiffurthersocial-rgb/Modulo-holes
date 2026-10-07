@@ -85,7 +85,7 @@ export function Hud({ holeNumber, holeName, par, coinsTotal, player, showHint, o
 
       {/* First-shot hint */}
       <AnimatePresence>
-        {showHint && !aiming && (
+        {showHint && !aiming && strokes === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: [0, -6, 0] }}

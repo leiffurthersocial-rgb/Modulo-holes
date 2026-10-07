@@ -8,7 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { TUNING } from "@/config/tuning";
 import type { CourseTheme } from "../courses/types";
-import type { BuiltHole, MeshData } from "../sim/build";
+import { pointInPoly, type BuiltHole, type MeshData } from "../sim/build";
 import type { GolfSim } from "../sim/GolfSim";
 import { beltTexture, candyStripeTexture, chevronTexture, gridTexture, sandTexture, sprinkleTexture, stripeTexture } from "./textures";
 import { Decor } from "./Decor";
@@ -74,8 +74,34 @@ export function CourseView({ built, theme, sim, isCandy }: { built: BuiltHole; t
         <Gate key={i} index={i} sim={sim} at={g.at} yaw={g.yaw} width={g.width} theme={theme} />
       ))}
       <Coins built={built} sim={sim} />
-      {built.decor.map((d, i) => (
-        <Decor key={i} d={d} theme={theme} />
+      <PlacedDecor built={built} theme={theme} isCandy={isCandy} />
+    </group>
+  );
+}
+
+/** Author-placed decor. Props off the course sit on little islands (water worlds) or float (void). */
+function PlacedDecor({ built, theme, isCandy }: { built: BuiltHole; theme: CourseTheme; isCandy: boolean }) {
+  const items = useMemo(() => {
+    const outlines = built.def.pieces.flatMap((p) => (p.kind === "floor" ? [p.pts] : []));
+    return built.decor.map((d) => {
+      const onCourse = outlines.some((o) => pointInPoly(d.at[0], d.at[2], o));
+      const island = !onCourse && theme.below.kind === "water";
+      const y = onCourse ? d.at[1] : island ? theme.below.y + 0.35 : d.at[1];
+      return { d: { ...d, at: [d.at[0], y, d.at[2]] as [number, number, number] }, island };
+    });
+  }, [built, theme]);
+  return (
+    <group>
+      {items.map(({ d, island }, i) => (
+        <group key={i}>
+          {island && (
+            <mesh position={[d.at[0], theme.below.y + 0.1, d.at[2]]} receiveShadow castShadow>
+              <cylinderGeometry args={[1.1 * (d.scale ?? 1), 1.3 * (d.scale ?? 1), 0.55, 9]} />
+              <meshStandardMaterial color={isCandy ? theme.green : theme.grass} flatShading />
+            </mesh>
+          )}
+          <Decor d={d} theme={theme} />
+        </group>
       ))}
     </group>
   );

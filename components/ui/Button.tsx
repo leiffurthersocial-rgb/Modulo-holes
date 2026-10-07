@@ -68,7 +68,7 @@ export function IconButton({
       aria-label={label}
       title={label}
       variant={variant}
-      className={`!h-auto !rounded-full !px-0 ${className}`}
+      className={`!rounded-full !px-0 ${className}`}
       style={{ width: size, height: size }}
       {...rest}
     />

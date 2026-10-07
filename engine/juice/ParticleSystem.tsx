@@ -119,11 +119,11 @@ export function ParticleSystem() {
       const t = p.life / p.maxLife;
       const fade = Math.min(1, t * 3);
       let sx = p.size, sy = p.size, sz = p.size;
-      if (p.kind === "confetti") { sx *= 0.16; sy *= 0.02; sz *= 0.1; }
+      if (p.kind === "confetti") { sx *= 0.075; sy *= 0.01; sz *= 0.05; }
       else if (p.kind === "spark" || p.kind === "ring") { const k = 0.07 * fade; sx *= k; sy *= k; sz *= k * 2.5; }
-      else if (p.kind === "star") { const k = 0.12 * fade; sx *= k; sy *= k; sz *= k; }
+      else if (p.kind === "star") { const k = 0.075 * fade; sx *= k; sy *= k; sz *= k; }
       else if (p.kind === "splash") { const k = 0.09 * fade; sx *= k; sy *= k; sz *= k; }
-      else { const k = 0.14 * (0.4 + (1 - t)) * fade; sx *= k; sy *= k; sz *= k; }
+      else { const k = 0.07 * (0.4 + (1 - t)) * fade; sx *= k; sy *= k; sz *= k; }
       tmp.q.setFromEuler(p.rot);
       if (p.kind === "spark" || p.kind === "ring") {
         // Stretch along velocity.

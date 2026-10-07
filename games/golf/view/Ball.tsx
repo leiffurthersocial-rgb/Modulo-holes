@@ -11,7 +11,7 @@ import type { BallSkin } from "../skins";
 const R = TUNING.golf.ball.radius;
 
 /** The ball: rolls visually from its velocity, squashes on impacts, leaves a speed trail. */
-export function Ball({ sim, skin, trailColor }: { sim: GolfSim; skin: BallSkin; trailColor: string }) {
+export function Ball({ sim, skin, trailColor, glow = false }: { sim: GolfSim; skin: BallSkin; trailColor: string; glow?: boolean }) {
   const group = useRef<THREE.Group>(null);
   const mesh = useRef<THREE.Mesh>(null);
   const blob = useRef<THREE.Mesh>(null);
@@ -47,10 +47,11 @@ export function Ball({ sim, skin, trailColor }: { sim: GolfSim; skin: BallSkin; 
       <Trail width={1.1} length={6} color={trailColor} attenuation={(w) => w * w} decay={2}>
         <mesh ref={mesh} castShadow>
           <sphereGeometry args={[R, 32, 20]} />
-          <meshStandardMaterial map={tex} roughness={0.32} metalness={skin.id === "gold" ? 0.8 : 0.05} emissive={skin.emissive ?? "#000000"} emissiveIntensity={skin.emissive ? 0.6 : 0} />
+          <meshStandardMaterial map={tex} roughness={0.32} metalness={skin.id === "gold" ? 0.8 : 0.05} emissive={skin.emissive ?? (glow ? "#ffffff" : "#000000")} emissiveIntensity={skin.emissive ? 0.6 : glow ? 0.45 : 0} emissiveMap={glow && !skin.emissive ? tex : null} />
         </mesh>
       </Trail>
       {/* Contact shadow blob — reads well even with shadows disabled. */}
+      {glow && <pointLight color={trailColor} intensity={2.5} distance={2.5} decay={2} />}
       <mesh ref={blob} position={[0, -R + 0.012, 0]} rotation-x={-Math.PI / 2}>
         <circleGeometry args={[R * 1.15, 20]} />
         <meshBasicMaterial color="#000" transparent opacity={0.22} depthWrite={false} />

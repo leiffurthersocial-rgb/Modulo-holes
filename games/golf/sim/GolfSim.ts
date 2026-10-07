@@ -48,6 +48,17 @@ interface KinState {
   angVel: THREE.Vector3;
 }
 
+export interface SimSnapshot {
+  world: Uint8Array;
+  t: number;
+  phase: GolfPhase;
+  strokes: number;
+  penalties: number;
+  restPos: THREE.Vector3;
+  collected: number[];
+  kin: { pos: THREE.Vector3; quat: THREE.Quaternion }[];
+}
+
 export interface GroundInfo {
   normal: THREE.Vector3;
   /** Surface velocity at the contact point. */
@@ -58,8 +69,8 @@ export interface GroundInfo {
 export class GolfSim {
   readonly R: R;
   readonly built: BuiltHole;
-  readonly world: RAPIER_T.World;
-  readonly ball: RAPIER_T.RigidBody;
+  world: RAPIER_T.World;
+  ball: RAPIER_T.RigidBody;
   private ballCol: RAPIER_T.Collider;
   private floorCol: RAPIER_T.Collider | null = null;
   private events = new Array<GolfEvent>();
@@ -69,6 +80,8 @@ export class GolfSim {
   private kinByCollider = new Map<number, KinState>();
   readonly kin: KinState[] = [];
   private hooks: RAPIER_T.PhysicsHooks;
+  /** Ball velocity captured before each step for use inside physics hooks. */
+  private hookVel = new THREE.Vector3();
   private belowWater: CourseTheme["below"] | null;
 
   phase: GolfPhase = "aim";
@@ -80,7 +93,7 @@ export class GolfSim {
   readonly ballPos = new THREE.Vector3();
   readonly ballVel = new THREE.Vector3();
   readonly restPos = new THREE.Vector3();
-  readonly collected = new Set<number>();
+  collected = new Set<number>();
   ground: GroundInfo | null = null;
   /** Seconds since the ball last touched anything. */
   airTime = 0;
@@ -89,7 +102,7 @@ export class GolfSim {
   padPulse: number[] = [];
   /** Per-shot trick flags for celebration text. */
   shot = { railHits: 0, bumpers: 0, teleported: false, bounced: false, boosted: false, maxAir: 0, startPos: new THREE.Vector3(), time: 0 };
-  private restTimer = 0;
+  restTimer = 0;
   private hazardTimer = 0;
   private teleportCooldown = 0;
   private inBoost = new Set<number>();
@@ -97,7 +110,7 @@ export class GolfSim {
 
   constructor(Rapier: R, built: BuiltHole | Parameters<typeof buildHole>[0], below: CourseTheme["below"] | null = null) {
     this.R = Rapier;
-    this.built = "physicsMesh" in built ? built : buildHole(built);
+    this.built = "physicsMesh" in built ? built : buildHole(built, { skirtBottom: below ? (below.kind === "water" ? below.y - 0.3 : -2.2) : undefined });
     this.belowWater = below;
     const b = this.built;
     const world = new Rapier.World({ x: 0, y: G.gravity, z: 0 });
@@ -211,7 +224,8 @@ export class GolfSim {
         const gi = this.gateHandles.get(c1) ?? this.gateHandles.get(c2);
         if (gi === undefined) return Rapier.SolverFlags.COMPUTE_IMPULSE;
         const g = this.built.gates[gi];
-        const v = this.ball.linvel();
+        // NB: never touch Rapier bodies inside hooks (the world is borrowed during step).
+        const v = this.hookVel;
         const along = v.x * g.dir[0] + v.z * g.dir[1];
         // Also allow when the ball is already past the gate plane on the "forward" side.
         return along > -0.3 ? null : Rapier.SolverFlags.COMPUTE_IMPULSE;
@@ -322,7 +336,7 @@ export class GolfSim {
     this.teleportCooldown = Math.max(0, this.teleportCooldown - h);
 
     if (this.phase === "holed") {
-      this.world.step(this.queue, this.hooks);
+      this.physicsStep();
       this.queue.drainCollisionEvents(() => {});
       this.syncBall();
       return;
@@ -330,7 +344,7 @@ export class GolfSim {
 
     if (this.phase === "hazard") {
       this.hazardTimer -= h;
-      this.world.step(this.queue, this.hooks);
+      this.physicsStep();
       this.queue.drainCollisionEvents(() => {});
       this.syncBall();
       if (this.hazardTimer <= 0) this.resetToRest();
@@ -357,7 +371,7 @@ export class GolfSim {
       const v = this.ball.linvel();
       this.ball.setLinvel({ x: gv.x, y: Math.min(v.y, gv.y + 0.5), z: gv.z }, true);
     }
-    this.world.step(this.queue, this.hooks);
+    this.physicsStep();
     this.queue.drainCollisionEvents(() => {});
     this.syncBall();
     this.updateContacts();
@@ -462,7 +476,7 @@ export class GolfSim {
     this.ball.setLinvel(vel, true);
     const before = vel.clone();
 
-    this.world.step(this.queue, this.hooks);
+    this.physicsStep();
 
     // ---- collision events: bumpers ----
     this.queue.drainCollisionEvents((h1, h2, started) => {
@@ -588,6 +602,12 @@ export class GolfSim {
     }
   }
 
+  private physicsStep() {
+    const v = this.ball.linvel();
+    this.hookVel.set(v.x, v.y, v.z);
+    this.world.step(this.queue, this.hooks);
+  }
+
   /** Recent airborne approach (for "bounce-in" detection). */
   private airTimeAtCup() {
     return this.shot.maxAir > 0.25;
@@ -665,6 +685,47 @@ export class GolfSim {
     });
     this.ground = best;
     return touching;
+  }
+
+  // ------------------------------------------------------------------ snapshots
+
+  /** Capture the full simulation state (used by the headless solver / verifier). */
+  snapshot(): SimSnapshot {
+    return {
+      world: this.world.takeSnapshot(),
+      t: this.t,
+      phase: this.phase,
+      strokes: this.strokes,
+      penalties: this.penalties,
+      restPos: this.restPos.clone(),
+      collected: [...this.collected],
+      kin: this.kin.map((k) => ({ pos: k.pos.clone(), quat: k.quat.clone() })),
+    };
+  }
+
+  restore(s: SimSnapshot) {
+    const handles = { ball: this.ball.handle, ballCol: this.ballCol.handle, floor: this.floorCol?.handle, kin: this.kin.map((k) => k.body.handle) };
+    this.world.free();
+    this.world = this.R.World.restoreSnapshot(s.world);
+    this.ball = this.world.getRigidBody(handles.ball);
+    this.ballCol = this.world.getCollider(handles.ballCol);
+    this.floorCol = handles.floor !== undefined ? this.world.getCollider(handles.floor) : null;
+    this.kin.forEach((k, i) => {
+      k.body = this.world.getRigidBody(handles.kin[i]);
+      k.pos.copy(s.kin[i].pos);
+      k.quat.copy(s.kin[i].quat);
+    });
+    this.t = s.t;
+    this.phase = s.phase;
+    this.strokes = s.strokes;
+    this.penalties = s.penalties;
+    this.restPos.copy(s.restPos);
+    this.collected = new Set(s.collected);
+    this.events = [];
+    this.restTimer = 0;
+    this.airTime = 0;
+    this.syncBall();
+    this.updateContacts();
   }
 
   // ------------------------------------------------------------------ preview

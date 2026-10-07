@@ -1,24 +1,30 @@
 import { loadRapier } from "@/engine/physics/rapier";
 import { GolfSim } from "@/games/golf/sim/GolfSim";
-import { TEST_HOLE } from "@/games/golf/courses/test";
+import { WORLDS } from "@/games/golf/courses";
 
 async function main() {
   const R = await loadRapier();
-  for (const power of [0.3, 0.35, 0.4, 0.45, 0.5, 0.6]) {
-    const sim = new GolfSim(R, TEST_HOLE, { kind: "water", color: "#00f", y: -1.2 });
-    for (let i = 0; i < 30; i++) sim.step();
-    sim.shoot(0, -1, power);
+  const find = (id: string) => { for (const w of WORLDS) for (const h of w.holes) if (h.id === id) return { h, w }; throw new Error(id); };
+  const run = (id: string, angleDeg: number, power: number, wait = 0) => {
+    const { h, w } = find(id);
+    const sim = new GolfSim(R, h, w.theme.below);
+    for (let i = 0; i < 30 + wait; i++) sim.step();
+    sim.drainEvents();
+    const a = (angleDeg * Math.PI) / 180;
+    sim.shoot(Math.sin(a), -Math.cos(a), power);
+    let minZ = 99;
     let t = 0;
-    const evs: string[] = [];
-    let maxY = 0;
-    while (sim.phase === "moving" && t < 15) {
-      sim.step();
-      t += 1 / 120;
-      maxY = Math.max(maxY, sim.ballPos.y);
-      for (const e of sim.drainEvents()) if (e.type !== "shot") evs.push(e.type + ("surface" in e ? `:${e.surface}:${e.speed.toFixed(1)}@${e.pos.map((x) => x.toFixed(2))}` : ""));
-    }
-    console.log(`p=${power} v=${GolfSim.shotSpeed(power).toFixed(1)} t=${t.toFixed(2)} phase=${sim.phase} pos=${sim.ballPos.toArray().map((x) => x.toFixed(2))} maxY=${maxY.toFixed(3)} ev=${evs.slice(0, 8).join(" ")}`);
+    const evs = new Set<string>();
+    while (sim.phase === "moving" && t < 15) { sim.step(); t += 1 / 120; minZ = Math.min(minZ, sim.ballPos.z); for (const e of sim.drainEvents()) evs.add(e.type + ("surface" in e ? ":" + e.surface : "")); }
+    console.log(`${id} ${angleDeg}°@${power} wait=${wait} → ${sim.phase} pos=${sim.ballPos.toArray().map((x) => x.toFixed(1))} minZ=${minZ.toFixed(1)} ev=${[...evs].join(",")}`);
     sim.dispose();
-  }
+  };
+  run("neon-8", 0, 0.6);
+  run("neon-8", 0, 0.9);
+  for (const wt of [0, 40, 80, 120]) run("meadow-5", 0, 0.5, wt);
+  run("neon-1", 0, 0.5);
+  run("candy-1", 0, 0.4);
+  run("neon-6", 0, 0.5, 0);
+  run("neon-6", 0, 0.5, 400);
 }
 main();

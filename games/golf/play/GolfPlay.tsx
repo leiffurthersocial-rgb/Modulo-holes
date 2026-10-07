@@ -220,7 +220,7 @@ export default function GolfPlay({ entryId, params, onExit }: PlayProps) {
         <CameraRig rig={rig} />
         <Environment built={sim.built} theme={theme} world={world.id} />
         <CourseView key={sessionKey} built={sim.built} theme={theme} sim={sim} isCandy={world.id === "candy"} />
-        <Ball sim={sim} skin={skin} trailColor={theme.glowEdges ? theme.accent : "#ffffff"} />
+        <Ball sim={sim} skin={skin} trailColor={theme.glowEdges ? theme.accent : "#ffffff"} glow={!!theme.glowEdges} />
         <AimView sim={sim} aim={aim} />
         <GolfController
           key={sessionKey}

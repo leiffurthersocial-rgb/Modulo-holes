@@ -22,6 +22,8 @@ import type {
 } from "../courses/types";
 
 const G = TUNING.golf;
+/** Moving decks sit a hair below the floor so the ball rolls onto them instead of clipping their edge. */
+const PLATFORM_DROP = 0.015;
 
 export interface MeshData {
   positions: number[];
@@ -154,7 +156,13 @@ function boxAlong(a: THREE.Vector3, b: THREE.Vector3, width: number, height: num
 
 // ---------------------------------------------------------------------------------------
 
-export function buildHole(def: HoleDef): BuiltHole {
+export interface BuildOptions {
+  /** Lowest point cliff faces reach (water level / void depth). */
+  skirtBottom?: number;
+}
+
+export function buildHole(def: HoleDef, opts: BuildOptions = {}): BuiltHole {
+  const skirtBottom = opts.skirtBottom ?? -1.6;
   const physicsMesh = newMesh();
   const floors: BuiltHole["floors"] = [];
   const tracks: MeshData[] = [];
@@ -216,20 +224,25 @@ export function buildHole(def: HoleDef): BuiltHole {
         }
         appendMesh(physicsMesh, top);
 
-        // Visual skirt down the outer edges.
+        // Cliff faces down every outer edge. They are solid (part of the physics mesh) so a
+        // raised green has a real wall, and they share vertices with the top surface so the
+        // internal-edge fix smooths the lip.
         const side = newMesh();
-        const depth = 0.9;
         const n = pts.length;
+        const area0 = signedArea(pts);
         for (let i = 0; i < n; i++) {
           const p = pts[i], q = pts[(i + 1) % n];
           const ya = ptY(p, y0), yb = ptY(q, y0);
+          const bottom = Math.min(skirtBottom, Math.min(ya, yb) - 0.9);
           const base = side.positions.length / 3;
-          side.positions.push(p[0], ya, p[1], q[0], yb, q[1], q[0], yb - depth, q[1], p[0], ya - depth, p[1]);
+          side.positions.push(p[0], ya, p[1], q[0], yb, q[1], q[0], bottom, q[1], p[0], bottom, p[1]);
           const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
-          side.uvs.push(0, 0, len, 0, len, 1, 0, 1);
-          side.indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
-          side.indices.push(base, base + 1, base + 2, base, base + 2, base + 3); // double-sided
+          side.uvs.push(0, ya, len, yb, len, bottom, 0, bottom);
+          // Outward-facing winding (consistent with the up-facing top).
+          if (area0 > 0) side.indices.push(base, base + 2, base + 3, base, base + 1, base + 2);
+          else side.indices.push(base, base + 3, base + 2, base, base + 2, base + 1);
         }
+        appendMesh(physicsMesh, side);
         floors.push({ tone: piece.tone ?? "fairway", top, side });
 
         // Rails along edges.
@@ -336,7 +349,7 @@ export function buildHole(def: HoleDef): BuiltHole {
           id: kinId++,
           kind: "mover",
           size: piece.size,
-          shapes: [{ kind: "box", half: [piece.size[0] / 2, piece.size[1] / 2, piece.size[2] / 2], offset: [0, -piece.size[1] / 2, 0] }],
+          shapes: [{ kind: "box", half: [piece.size[0] / 2, piece.size[1] / 2, piece.size[2] / 2], offset: [0, -piece.size[1] / 2 - PLATFORM_DROP, 0] }],
           pose: (t, p, q) => {
             // Ping-pong with eased ends and a hold at each end.
             let u = (((t / period + phase) % 1) + 1) % 1;
@@ -363,7 +376,7 @@ export function buildHole(def: HoleDef): BuiltHole {
           id: kinId++,
           kind: "tilt",
           size: piece.size,
-          shapes: [{ kind: "box", half: [piece.size[0] / 2, piece.size[1] / 2, piece.size[2] / 2], offset: [0, -piece.size[1] / 2, 0] }],
+          shapes: [{ kind: "box", half: [piece.size[0] / 2, piece.size[1] / 2, piece.size[2] / 2], offset: [0, -piece.size[1] / 2 - PLATFORM_DROP, 0] }],
           pose: (t, p, q) => {
             p.set(at[0], at[1], at[2]);
             q.setFromAxisAngle(ax, Math.sin((t / period + phase) * Math.PI * 2) * amp);
