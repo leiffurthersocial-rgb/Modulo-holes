@@ -48,6 +48,10 @@ export function GameCanvas({ children, bloom, vignette = 0.35, background }: Pro
       gl={{ antialias: !preset.post, powerPreference: "high-performance", stencil: false }}
       camera={{ fov: 50, near: 0.05, far: 400, position: [0, 8, 10] }}
       style={{ touchAction: "none" }}
+      onCreated={(state) => {
+        // Debug handle for automated scene inspection (harmless in production).
+        (window as unknown as { __scene?: unknown }).__scene = state.scene;
+      }}
     >
       {background && <color attach="background" args={[background]} />}
       <ToneMappingSync post={preset.post} />

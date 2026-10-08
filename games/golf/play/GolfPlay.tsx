@@ -8,6 +8,7 @@ import type { PlayProps } from "@/games/types";
 import { loadRapier } from "@/engine/physics/rapier";
 import { GameCanvas } from "@/engine/render/GameCanvas";
 import { CameraRig } from "@/engine/camera/CameraRig";
+import { Remount } from "@/engine/render/Remount";
 import { CameraRigState } from "@/engine/camera/rig";
 import { PopupLayer } from "@/engine/juice/PopupLayer";
 import { popup, resetTime, resetShake, usePopups } from "@/engine/juice";
@@ -223,7 +224,9 @@ export default function GolfPlay({ entryId, params, onExit }: PlayProps) {
       <GameCanvas bloom={{ intensity: theme.bloom }} vignette={0.38}>
         <CameraRig rig={rig} />
         <Environment built={sim.built} theme={theme} world={world.id} />
-        <CourseView key={sessionKey} built={sim.built} theme={theme} sim={sim} isCandy={world.id === "candy"} />
+        <Remount id={sessionKey} name="course">
+          <CourseView built={sim.built} theme={theme} sim={sim} isCandy={world.id === "candy"} />
+        </Remount>
         <Ball sim={sim} skin={skin} trailColor={theme.glowEdges ? theme.accent : "#ffffff"} glow={!!theme.glowEdges} />
         <AimView sim={sim} aim={aim} />
         <GolfController

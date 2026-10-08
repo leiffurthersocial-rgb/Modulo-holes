@@ -5,6 +5,7 @@ import { Home, RotateCcw, ArrowRight, Trophy } from "lucide-react";
 import type { PlayProps } from "@/games/types";
 import { GameCanvas } from "@/engine/render/GameCanvas";
 import { CameraRig } from "@/engine/camera/CameraRig";
+import { Remount } from "@/engine/render/Remount";
 import { CameraRigState } from "@/engine/camera/rig";
 import { PopupLayer } from "@/engine/juice/PopupLayer";
 import { emitParticles, haptic, popup, resetShake, resetTime, usePopups } from "@/engine/juice";
@@ -153,7 +154,9 @@ export default function BilliardsPlay({ entryId, params, onExit, onNavigate }: P
         <spotLight position={[0, 2.6, 0.2]} angle={0.85} penumbra={0.7} intensity={28} decay={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0002} color="#fff3dc" />
         <directionalLight position={[1.5, 3, 1]} intensity={0.6} />
         <Table theme={theme} kitchen={game.state.kitchen && game.state.ballInHand} zone={game.trick?.goal.cueZone ?? null} targetPockets={game.trick?.goal.pockets ? Object.values(game.trick.goal.pockets) : undefined} />
-        <Balls key={`balls-${round}-${trickResult ? 1 : 0}`} game={game} />
+        <Remount id={`balls-${round}-${trickResult ? 1 : 0}`}>
+          <Balls game={game} />
+        </Remount>
         <CueStick game={game} />
         <AimGuide game={game} />
         <PlacementRing game={game} valid={placeValid} />
