@@ -7,6 +7,7 @@
 export const GAME_ROUTES: Record<string, string[]> = {
   golf: ["campaign", "quick", "daily", "party"],
   billiards: ["ai", "local", "trick", "practice"],
+  darts: ["ai", "local", "clock", "challenge", "practice"],
 };
 
 export const gameRouteParams = () => Object.keys(GAME_ROUTES).map((gameId) => ({ gameId }));

@@ -174,10 +174,10 @@ function ComingSoonCard({ index }: { index: number }) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.08 + index * 0.08 }}
-      className="flex aspect-[16/10] flex-col items-center justify-center gap-2 rounded-[28px] border-2 border-dashed border-line text-dim md:col-span-2 md:aspect-auto md:py-10"
+      className="flex aspect-[16/10] flex-col items-center justify-center gap-2 rounded-[28px] border-2 border-dashed border-line text-dim md:aspect-auto md:py-10"
     >
       <div className="font-display text-lg font-semibold">More games soon</div>
-      <div className="text-sm">Bowling? Darts? Curling? 👀</div>
+      <div className="text-sm">Bowling? Curling? Air hockey? 👀</div>
     </motion.div>
   );
 }

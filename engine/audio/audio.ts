@@ -37,7 +37,13 @@ export type SfxName =
   | "pocket"
   | "foul"
   | "unlock"
-  | "countUp";
+  | "countUp"
+  | "dartThrow"
+  | "dartHit"
+  | "dartWire"
+  | "dartWall"
+  | "crowd"
+  | "crowdSmall";
 
 export interface PlayOpts {
   /** 0..1 — scales volume and often pitch/brightness. */
@@ -313,6 +319,37 @@ class AudioEngine {
         T(1600, 0.05, { type: "triangle", vol: 0.05, delay: 0.12 });
         T(1300, 0.05, { type: "triangle", vol: 0.04, delay: 0.2 });
         break;
+      case "dartThrow":
+        N(0.22, { filter: "bandpass", freq: 900, freqTo: 3200, q: 1.4, vol: 0.12 * (0.5 + k), attack: 0.03 });
+        T(1600 + k * 400, 0.12, { type: "sine", vol: 0.02, glideTo: 900 });
+        break;
+      case "dartHit":
+        // Sisal "thunk": a dull body + short fibrous crunch; trebles/bulls add a bright ping via pitch.
+        T(150 + k * 40, 0.14, { type: "sine", vol: 0.42, glideTo: 70 });
+        N(0.06, { filter: "lowpass", freq: 1400, vol: 0.32 });
+        N(0.025, { filter: "bandpass", freq: 3200, q: 2, vol: 0.12 });
+        if ((o.pitch ?? 0) > 0) T(1800 * Math.pow(2, (o.pitch ?? 0) / 12), 0.25, { type: "sine", vol: 0.06, delay: 0.02 });
+        break;
+      case "dartWire":
+        T(3400, 0.18, { type: "triangle", vol: 0.12, glideTo: 2900 });
+        T(5100, 0.12, { type: "sine", vol: 0.06 });
+        N(0.03, { filter: "highpass", freq: 4000, vol: 0.12 });
+        break;
+      case "dartWall":
+        T(95, 0.18, { type: "sine", vol: 0.35, glideTo: 55 });
+        N(0.09, { filter: "lowpass", freq: 600, vol: 0.25 });
+        break;
+      case "crowd":
+      case "crowdSmall": {
+        // Crowd roar: layered band-passed noise swells plus a scatter of claps.
+        const big = name === "crowd";
+        const dur = big ? 2.6 : 1.3;
+        N(dur, { filter: "bandpass", freq: 700, q: 0.6, vol: big ? 0.22 : 0.1, attack: 0.25 });
+        N(dur * 0.9, { filter: "bandpass", freq: 1800, q: 0.8, vol: big ? 0.12 : 0.05, attack: 0.3 });
+        for (let i = 0; i < (big ? 26 : 10); i++) N(0.03, { filter: "bandpass", freq: 1500 + Math.random() * 2000, q: 1.5, vol: 0.06 + Math.random() * 0.06, delay: 0.1 + Math.random() * dur * 0.8 });
+        if (big) T(220, 1.6, { type: "sawtooth", vol: 0.015, glideTo: 330, attack: 0.4 });
+        break;
+      }
       case "foul":
         T(220, 0.22, { type: "sawtooth", vol: 0.08, glideTo: 150 });
         T(165, 0.3, { type: "sawtooth", vol: 0.07, delay: 0.12, glideTo: 110 });
@@ -403,7 +440,7 @@ class AudioEngine {
   }
 }
 
-export type MusicMood = "hub" | "meadow" | "neon" | "candy" | "lounge";
+export type MusicMood = "hub" | "meadow" | "neon" | "candy" | "lounge" | "pub";
 
 interface MoodDef {
   bpm: number;
@@ -420,6 +457,7 @@ const MOODS: Record<MusicMood, MoodDef> = {
   meadow: { bpm: 96, chords: [[60, 64, 67], [65, 69, 72], [57, 60, 64], [67, 71, 74]], scale: [0, 2, 4, 7, 9, 12], density: 0.35, lead: "triangle", hats: false, fifthBass: true },
   neon: { bpm: 108, chords: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], scale: [0, 3, 5, 7, 10], density: 0.42, lead: "square", hats: true, fifthBass: false },
   candy: { bpm: 112, chords: [[65, 69, 72], [62, 65, 69], [58, 62, 65], [60, 64, 67]], scale: [0, 2, 4, 7, 9, 12, 14], density: 0.4, lead: "triangle", hats: true, fifthBass: true },
+  pub: { bpm: 92, chords: [[55, 59, 62, 65], [60, 64, 67, 70], [55, 59, 62, 65], [62, 66, 69, 72]], scale: [0, 3, 5, 6, 7, 10], density: 0.3, lead: "triangle", hats: true, fifthBass: true },
   lounge: { bpm: 76, chords: [[62, 65, 69, 72], [67, 71, 74, 77], [60, 64, 67, 71], [57, 61, 64, 67]], scale: [0, 2, 3, 5, 7, 9, 10], density: 0.3, lead: "sine", hats: true, fifthBass: true },
 };
 

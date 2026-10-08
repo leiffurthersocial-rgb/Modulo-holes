@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "verify:courses": "tsx scripts/verify-courses.ts",
     "verify:trickshots": "tsx scripts/verify-trickshots.ts",
-    "selfplay:billiards": "tsx scripts/billiards-selfplay.ts"
+    "selfplay:billiards": "tsx scripts/billiards-selfplay.ts",
+    "verify:darts": "tsx scripts/verify-darts.ts"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

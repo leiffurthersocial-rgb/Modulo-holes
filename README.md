@@ -1,9 +1,10 @@
 # Modulo: Holes
 
-A tiny, polished browser game hub with juicy gameplay. Two games so far:
+A tiny, polished browser game hub with juicy gameplay. Three games so far:
 
 - **Golf**: 27 mini-golf holes across 3 worlds (Sunny Meadow, Neon Night, Candy Land). Loops, windmills, teleporters, half-pipes, conveyors and one-way gates. Modes: Campaign, Quick Round, Daily Challenge and Pass & Play.
 - **Billiards**: 8-ball and 9-ball against a 3-level AI or a friend, 10 trick-shot puzzles, and a practice table. Includes spin (english), a ghost-ball aim guide and 7 unlockable table themes.
+- **Darts**: 501, 301 and Cricket against a 3-level AI or a friend (single leg or best of 3), Around the Clock, 10 three-dart challenges, and practice. Flick to throw, with bounce-outs, checkout hints, and 180 celebrations. Includes 4 unlockable boards and 5 flight designs.
 
 All visuals, sounds and music are generated at runtime. The repo ships no image or audio assets and needs no API keys or backend. Progress, settings and best scores are stored in `localStorage`.
 
@@ -24,6 +25,7 @@ npm run dev        # http://localhost:3000
 | `npm run verify:courses` | Headless Rapier solver that proves every golf hole is completable (pass world or hole ids to limit it) |
 | `npm run verify:trickshots` | Brute-force search that proves every billiards trick shot is achievable |
 | `npm run selfplay:billiards` | AI-vs-AI games as a smoke test for the rules and AI |
+| `npm run verify:darts` | Darts checks: board scoring geometry, every checkout from 2 to 170, challenge plans, the flick model, and AI self-play averages per level |
 
 Requires Node 20 or newer (developed on Node 22).
 
@@ -52,6 +54,12 @@ Every route is statically prerendered, so the site can also be hosted on any sta
 - Tap or drag on the cue-ball widget to add follow, draw or side spin (double-tap to reset).
 - Use ‹ › to fine-tune the aim. The camera button switches between the overhead view and the cue view.
 - With ball in hand, drag the cue ball to place it.
+
+**Darts**
+- Hold anywhere to aim. On touch the reticle sits just above your finger and follows it at reduced speed for precision.
+- Flick up to throw. A smooth, quick flick flies true, a soft one drops low, an over-hard one sails high, and a sideways flick pulls the dart.
+- Don't hold too long: after a moment your hand starts to wobble, and the reticle shows it.
+- In x01 the checkout chip suggests a finishing route.
 
 Settings cover sound, music, haptics, graphics quality (auto, low, medium or high), light or dark theme, and left-handed controls, which mirror the in-game HUD.
 
@@ -117,14 +125,27 @@ The AI reuses this solver for look-ahead:
 
 The search runs as a generator spread across animation frames, so the UI never stutters. Difficulty sets the search breadth and the execution noise.
 
+### Darts: flick throwing
+
+`games/darts/sim/` is pure TypeScript:
+
+- `board.ts`: regulation ring radii, sector order, scoring, and the distance to the nearest wire (used for bounce-outs).
+- `rules.ts`: x01 with double-out and busts, Cricket, and Around the Clock.
+- `checkout.ts`: fewest-dart routes that prefer the classic doubles.
+- `throw.ts`: turns flick speed and angle into an error relative to the aim.
+- `ai.ts`: picks targets like a player would (T20, checkout routes, cricket strategy) and throws with a per-level scatter.
+
+The browser gesture code finds where the final upward swipe began, so uneven touch events still measure the flick correctly. The aim snaps back to where it was before the flick started.
+
 ### Tuning feel
 
-Every feel constant is in `config/tuning.ts`: shot power curves, rolling resistance per surface, bumper kick, boost speed, cup assist, camera distances, celebration slow-mo, shake decay, billiards friction coefficients, AI noise and more.
+Every feel constant is in `config/tuning.ts`: shot power curves, rolling resistance per surface, bumper kick, boost speed, cup assist, camera distances, celebration slow-mo, shake decay, billiards friction coefficients, darts flick bands, sway and bounce-out odds, AI noise and more.
 
 ## Progression
 
 - **Golf**: stars (3 per hole, based on strokes vs par) unlock worlds: Neon Night at 12★ and Candy Land at 30★. Holes unlock in order. Stars and coins unlock 9 ball skins.
 - **Billiards**: wins (including beating the Hustler AI) and trick-shot stars unlock 7 table themes. Trick shots unlock in order.
+- **Darts**: wins, 180s, bulls and challenge stars unlock boards (Ally Pally, Neon Arcade, Sugar Rush) and flight designs. Challenges unlock in order.
 - The hub shows a trophy strip. Settings can reset all progress.
 
 ## Tech

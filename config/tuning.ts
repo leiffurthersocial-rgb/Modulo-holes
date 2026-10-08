@@ -139,6 +139,46 @@ export const TUNING = {
     },
   },
 
+  darts: {
+    /** Oche → board distance (m) and eye height. */
+    oche: 2.37,
+    boardHeight: 1.73,
+    flight: {
+      /** Real seconds a dart spends in the air. */
+      time: 0.34,
+      arc: 0.16,
+    },
+    flick: {
+      /** Flick speed measured in screen-heights per second. Below `min` the throw is cancelled. */
+      min: 0.45,
+      idealLow: 1.5,
+      idealHigh: 3.6,
+      /** Metres of drop per unit of speed below the ideal band (soft throws land low). */
+      softDrop: 0.085,
+      /** Metres of rise per unit above the band. */
+      hardRise: 0.045,
+      /** Lateral metres per unit of sin(flick angle). */
+      lateral: 0.11,
+      /** Inherent human scatter (σ, metres). */
+      scatter: 0.0035,
+    },
+    sway: {
+      /** Aim wobble amplitude (m) while steady, and how it grows after `steadyTime` seconds held. */
+      base: 0.0018,
+      growth: 0.006,
+      steadyTime: 1.6,
+      max: 0.02,
+    },
+    /** Chance a dart landing within `wireZone` of a wire bounces out. */
+    bounceOut: { chance: 0.32, wireZone: 0.0009 },
+    ai: {
+      easy: { sigma: 0.029, think: 0.7 },
+      medium: { sigma: 0.0175, think: 0.6 },
+      hard: { sigma: 0.0092, think: 0.5 },
+    },
+    juice: { hitShake: 0.08, bigShake: 0.6, checkoutSlowMo: 0.3, checkoutSlowMoTime: 0.9 },
+  },
+
   juice: {
     shakeDecay: 1.6,
     shakeMaxOffset: 0.45,
